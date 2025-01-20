@@ -1,0 +1,74 @@
+-- USERS TABLE
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role VARCHAR(10) CHECK (role IN ('Admin', 'User')) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- BOOKS TABLE
+CREATE TABLE books (
+    book_id SERIAL PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    author VARCHAR(100) NOT NULL,
+    category VARCHAR(50),
+    status VARCHAR(20) CHECK (status IN ('Available', 'Issued')) DEFAULT 'Available',
+    cost DECIMAL(10, 2),
+    procurement_date DATE,
+    quantity INT CHECK (quantity >= 0) DEFAULT 1
+);
+
+-- MEMBERSHIPS TABLE
+CREATE TABLE memberships (
+    membership_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    contact_number VARCHAR(15) NOT NULL,
+    contact_address TEXT NOT NULL,
+    aadhar_card_no VARCHAR(12) UNIQUE NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    status VARCHAR(10) CHECK (status IN ('Active', 'Inactive')) DEFAULT 'Active',
+    fine_amount DECIMAL(10, 2) DEFAULT 0
+);
+
+-- TRANSACTIONS TABLE
+CREATE TABLE transactions (
+    transaction_id SERIAL PRIMARY KEY,
+    book_id INT REFERENCES books(book_id),
+    membership_id INT REFERENCES memberships(membership_id),
+    issue_date DATE NOT NULL,
+    return_date DATE NOT NULL,
+    actual_return_date DATE,
+    fine_calculated DECIMAL(10, 2) DEFAULT 0,
+    fine_paid BOOLEAN DEFAULT FALSE,
+    remarks TEXT
+);
+
+-- ISSUE REQUESTS TABLE
+CREATE TABLE issue_requests (
+    request_id SERIAL PRIMARY KEY,
+    membership_id INT REFERENCES memberships(membership_id),
+    book_id INT REFERENCES books(book_id),
+    request_date DATE DEFAULT CURRENT_DATE,
+    request_fulfilled_date DATE
+);
+
+-- AUDIT LOGS TABLE
+CREATE TABLE audit_logs (
+    log_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(user_id),
+    action VARCHAR(100) NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- INDEXES AND CONSTRAINTS
+CREATE INDEX idx_books_title ON books(title);
+CREATE INDEX idx_transactions_dates ON transactions(issue_date, return_date);
+CREATE INDEX idx_memberships_status ON memberships(status);
+
+-- SAMPLE DATA INSERTIONS
+-- Insert admin user
+INSERT INTO users (username, password_hash, role) 
+VALUES ('admin', 'hashed_password', 'Admin');
