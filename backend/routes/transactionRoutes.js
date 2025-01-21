@@ -7,8 +7,13 @@ const {
 
 const router = express.Router();
 
+// Route to issue a book
 router.post("/issue", issueBook);
+
+// Route to return a book
 router.post("/return", returnBook);
-router.post("/pay-fine", payFine);
+
+// Route to pay a fine
+router.post("/payFine", payFine);
 
 module.exports = router;

@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
 
+// Admin login
 const adminLogin = async (req, res) => {
   const { username, password } = req.body;
 
@@ -13,15 +14,15 @@ const adminLogin = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const user = result.rows[0];
-    const isMatch = await bcrypt.compare(password, user.password_hash);
+    const admin = result.rows[0];
+    const isMatch = await bcrypt.compare(password, admin.password_hash);
 
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const token = jwt.sign(
-      { userId: user.user_id, role: user.role },
+      { userId: admin.user_id, role: admin.role },
       process.env.JWT_SECRET,
       {
         expiresIn: "1h",

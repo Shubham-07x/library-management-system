@@ -36,7 +36,4 @@ const validateBook = [
   },
 ];
 
-module.exports = {
-  validateUser,
-  validateBook,
-};
+module.exports = { validateUser, validateBook };

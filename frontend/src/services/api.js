@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
 // Set up axios instance
 const api = axios.create({
@@ -63,6 +63,11 @@ export const updateBook = async (bookId, bookData) => {
   return response.data;
 };
 
+export const deleteBook = async (bookId) => {
+  const response = await api.delete(`/admin/deleteBook/${bookId}`);
+  return response.data;
+};
+
 export const addMembership = async (membershipData) => {
   const response = await api.post("/admin/addMembership", membershipData);
   return response.data;
@@ -73,6 +78,11 @@ export const updateMembership = async (membershipId, membershipData) => {
     `/admin/updateMembership/${membershipId}`,
     membershipData
   );
+  return response.data;
+};
+
+export const deleteMembership = async (membershipId) => {
+  const response = await api.delete(`/admin/deleteMembership/${membershipId}`);
   return response.data;
 };
 
@@ -141,6 +151,26 @@ export const getIssueRequests = async () => {
 // Product Details API
 export const getProductDetails = async () => {
   const response = await api.get("/products");
+  return response.data;
+};
+
+export const getProductDetailsById = async (productId) => {
+  const response = await api.get(`/products/${productId}`);
+  return response.data;
+};
+
+export const addProduct = async (productData) => {
+  const response = await api.post("/products", productData);
+  return response.data;
+};
+
+export const updateProduct = async (productId, productData) => {
+  const response = await api.put(`/products/${productId}`, productData);
+  return response.data;
+};
+
+export const deleteProduct = async (productId) => {
+  const response = await api.delete(`/products/${productId}`);
   return response.data;
 };
 

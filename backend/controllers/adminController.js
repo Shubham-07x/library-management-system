@@ -1,129 +1,78 @@
-const db = require("../config/db");
-
-exports.addBook = async (req, res) => {
-  const { type, name, procurementDate, quantity } = req.body;
-  if (!type || !name || !procurementDate || !quantity) {
-    return res.status(400).json({ message: "All fields are required." });
-  }
-  try {
-    await db.query(
-      "INSERT INTO books (type, name, procurement_date, quantity) VALUES ($1, $2, $3, $4)",
-      [type, name, procurementDate, quantity]
-    );
-    res.status(201).json({ message: "Book/Movie added successfully!" });
-  } catch (error) {
-    res.status(500).json({ message: "Error adding book/movie.", error });
-  }
-};
-
-// Update book/movie details
-exports.updateBook = async (req, res) => {
-  const { id, status, name, serialNumber } = req.body;
-  if (!id || !status || !name || !serialNumber) {
-    return res.status(400).json({ message: "All fields are required." });
-  }
-  try {
-    await db.query(
-      "UPDATE books SET status = $1, name = $2, serial_number = $3 WHERE id = $4",
-      [status, name, serialNumber, id]
-    );
-    res.status(200).json({ message: "Book/Movie updated successfully!" });
-  } catch (error) {
-    res.status(500).json({ message: "Error updating book/movie.", error });
-  }
-};
-
-// Add a new membership
-exports.addMembership = async (req, res) => {
-  const {
-    firstName,
-    lastName,
-    contact,
-    address,
-    aadhar,
-    startDate,
-    endDate,
-    duration,
-  } = req.body;
-  if (
-    !firstName ||
-    !lastName ||
-    !contact ||
-    !address ||
-    !aadhar ||
-    !startDate ||
-    !endDate ||
-    !duration
-  ) {
-    return res.status(400).json({ message: "All fields are required." });
-  }
-  try {
-    await db.query(
-      "INSERT INTO memberships (first_name, last_name, contact, address, aadhar_card, start_date, end_date, duration) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-      [
-        firstName,
-        lastName,
-        contact,
-        address,
-        aadhar,
-        startDate,
-        endDate,
-        duration,
-      ]
-    );
-    res.status(201).json({ message: "Membership added successfully!" });
-  } catch (error) {
-    res.status(500).json({ message: "Error adding membership.", error });
-  }
-};
-
-// Update membership details
-exports.updateMembership = async (req, res) => {
-  const { membershipId, endDate, duration } = req.body;
-  if (!membershipId || !endDate || !duration) {
-    return res.status(400).json({ message: "All fields are required." });
-  }
-  try {
-    await db.query(
-      "UPDATE memberships SET end_date = $1, duration = $2 WHERE id = $3",
-      [endDate, duration, membershipId]
-    );
-    res.status(200).json({ message: "Membership updated successfully!" });
-  } catch (error) {
-    res.status(500).json({ message: "Error updating membership.", error });
-  }
-};
+const pool = require("../config/db");
 
 // Add a new user
-exports.addUser = async (req, res) => {
-  const { name, isActive, isAdmin } = req.body;
-  if (!name || isActive === undefined || isAdmin === undefined) {
-    return res.status(400).json({ message: "All fields are required." });
-  }
+const addUser = async (req, res) => {
+  const { username, password, role } = req.body;
+
   try {
-    await db.query(
-      "INSERT INTO users (name, is_active, is_admin) VALUES ($1, $2, $3)",
-      [name, isActive, isAdmin]
-    );
-    res.status(201).json({ message: "User added successfully!" });
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const query = `
+      INSERT INTO users (username, password_hash, role)
+      VALUES ($1, $2, $3)
+      RETURNING *;
+    `;
+    const values = [username, hashedPassword, role];
+
+    const result = await pool.query(query, values);
+    res
+      .status(201)
+      .json({ message: "User added successfully", user: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ message: "Error adding user.", error });
+    console.error("Error adding user:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// Update user details
-exports.updateUser = async (req, res) => {
-  const { userId, name, isActive, isAdmin } = req.body;
-  if (!userId || !name || isActive === undefined || isAdmin === undefined) {
-    return res.status(400).json({ message: "All fields are required." });
-  }
+// Update an existing user
+const updateUser = async (req, res) => {
+  const { id } = req.params;
+  const { username, password, role } = req.body;
+
   try {
-    await db.query(
-      "UPDATE users SET name = $1, is_active = $2, is_admin = $3 WHERE id = $4",
-      [name, isActive, isAdmin, userId]
-    );
-    res.status(200).json({ message: "User updated successfully!" });
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const query = `
+      UPDATE users
+      SET username = $1, password_hash = $2, role = $3
+      WHERE user_id = $4
+      RETURNING *;
+    `;
+    const values = [username, hashedPassword, role, id];
+
+    const result = await pool.query(query, values);
+    res
+      .status(200)
+      .json({ message: "User updated successfully", user: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ message: "Error updating user.", error });
+    console.error("Error updating user:", error);
+    res.status(500).json({ message: "Server error" });
   }
+};
+
+// Delete a user
+const deleteUser = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const query = "DELETE FROM users WHERE user_id = $1 RETURNING *";
+    const result = await pool.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res
+      .status(200)
+      .json({ message: "User deleted successfully", user: result.rows[0] });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+module.exports = {
+  addUser,
+  updateUser,
+  deleteUser,
 };
